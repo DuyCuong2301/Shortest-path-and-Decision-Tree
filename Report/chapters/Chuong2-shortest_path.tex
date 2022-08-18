@@ -1,0 +1,177 @@
+\documentclass[../main-report.tex]{subfiles}
+\begin{document}
+\section{Bài toán đường đi ngắn nhất}
+
+Cho đơn đồ thị có hướng $G = (V, E)$ với hàm trọng số $w: E \rightarrow R$ ($w(e)$ được gọi là độ dài hay trọng số của cạnh $e$).
+
+\textbf{Độ dài} của đường đi $P = v_{1} \rightarrow v_{2} \rightarrow ... \rightarrow v_{k}$ là số:
+$$w(P) = \sum^{k-1}_{i=1} w(v_{i}, v_{i+1})$$
+
+\textbf{Đường đi ngắn nhất} từ đỉnh $u$ đến đỉnh $v$ là đường đi có độ dài ngắn nhất trong số các đường đi nối $u$ với $v$.
+
+Độ dài của đường đi ngắn nhất từ $u$ đến $v$ còn được gọi là \textbf{Khoảng cách từ $u$ tới $v$} và ký hiệu là $\delta(u, v)$.
+
+\section*{Các dạng bài toán ĐĐNN}
+\begin{enumerate}
+\item \textbf{Bài toán một nguồn một đích} : Cho hai đỉnh $s$ và $t$, cần tìm đường đi ngắn nhất từ $s$ đến $t$.
+\item \textbf{Bài toán một nguồn nhiều đích} : Cho s là đỉnh nguồn, cần tìm đường đi ngắn nhất từ s đến tất cả các đỉnh còn lại.
+\item \textbf{Bài toán mọi cặp} : Tìm đường đi ngắn nhất giữa mọi cặp đỉnh của đồ thị.
+\end{enumerate}
+
+Ta thấy các bài toán được xếp theo thứ tự từ đơn giản đến phức tạp. Hễ có thuật toán hiệu quả để giải một trong ba bài toán thì thuật toán đó cũng có thể sử dụng để giải hai bài toán còn lại.
+
+Nếu đồ thị có chu trình âm thì độ dài đường đi giữa hai đỉnh nào đó có thể làm nhỏ tuỳ ý. Vậy để thực hiện bài toán tìm đường đi ngắn nhất ta giả thiết đồ thị không chứa chu trình âm.
+
+\textbf{Biểu diễn đường đi ngắn nhất} : các thuật toán tìm đường đi ngắn nhất làm việc với hai mảng:
+\begin{itemize}
+    \item $d(v)$ : độ dài đường đi từ s đến v ngắn nhất hiện biết (cận trên cho độ dài đường đi ngắn nhất thực sự).
+    \item $p(v)$ : đỉnh đi trước v trong đường đi nói trên (sẽ sử dụng để truy ngược đường đi từ s đến v).
+\end{itemize}
+
+\textbf{Giảm cận trên - Relaxation}: sử dụng cạnh (u, v) để kiểm tra xem đường đi đến v đã tìm được có thể làm ngắn hơn nhờ đi qua u hay không. 
+Các thuật toán tìm đđnn khác nhau ở số lần dùng các cạnh và trình tự duyệt chúng để thực hiện giảm cận.
+
+\section*{Nhận xét chung}
+\begin{itemize}
+    \item Việc cài đặt các thuật toán được thể hiện nhờ \textbf{thủ tục gán nhãn}: Mỗi đỉnh $v$ sẽ có nhãn gồm 2 thành phần $(d[v], p[v])$. Nhãn sẽ biến đổi trong quá trình thực hiện thuật toán.
+    \item Nhận thấy rằng để tính khoảng cách từ s đến t, ở đây, ta phải tính khoảng cách từ s đến tất cả cách đỉnh còn lại của đồ thị.
+    \item Hiện vẫn chưa biết thuật toán nào cho phép tìm đđnn giữa hai đỉnh làm việc thực sự hiệu quả hơn những thuật toán tìm đđnn từ một đỉnh đến tất cả các đỉnh còn lại.
+\end{itemize}
+
+\section{Thuật toán Bellman-Ford}
+\subsection{Ý tưởng thuật toán}
+Thuật toán Bellman-Ford tìm đường đi ngắn nhất từ đỉnh $s$ đến tất cả các đỉnh còn lại của đồ thị.
+
+Thuật toán làm việc trong trường hợp trọng số của các cung là tùy ý. Giả thiết rằng đồ thị không có chu trình âm.
+
+\textbf{Đầu vào} : 
+\begin{itemize}
+\item Đồ thị $G = (V, E)$ với n đỉnh xác định bởi ma trận trọng số $W[u, v], u,v \in V$, đỉnh nguồn $s \in V$.
+\end{itemize}
+
+\textbf{Đầu ra} : Với mỗi $v \in V$
+\begin{itemize}
+\item $d[v] = \delta[s, v]$.
+\item $p[v]$ - Đỉnh đi trước v trong đđnn từ s đến v.
+\end{itemize}
+
+\subsection{Cài đặt}
+Em thực hiện cài đặt thuật toán theo mã giả:
+\begin{algorithm}
+\caption{Bellman-Ford algorithm}\label{Bellman-Ford}
+\begin{algorithmic}[1]
+\Procedure{Bellman-Ford}{}
+\For{$v \in V$}              \Comment{Khởi tạo}
+    \State $d[v] \gets w[s, v]$
+    \State $p[v] \gets s$
+\EndFor
+\State $d[s] \gets 0$
+\State $p[s] \gets 0$           
+\For{$k=1$ \texttt{to} $n-2$}
+    \For{$v \in V \backslash\{s\}$}
+        \For{$u \in V$}
+            \If{$d[v] > d[u] + w[u, v]$}        \Comment{Bước Relaxation}
+                \State $d[v] \gets d[u] + w[u, v]$
+                \State $p[v] \gets u$
+            \EndIf 
+        \EndFor 
+    \EndFor
+\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Tính đúng đắn của thuật toán có thể chứng minh trên cơ sở nguyên lý tối ưu của quy hoạnh động.
+
+Độ phức tạp của thuật toán là $O(n^{3})$
+
+Đối với đồ thị thưa, sử dụng danh sách kề sẽ tốt hơn, khi đó vòng lặp theo u viết lại thành:
+\textbf{For} $u \in Ke(v)$ \textbf{do}
+
+Trong trường hợp này ta thu được thuật toán với độ phức tạp $O(n.m)$
+
+\section{Thuật toán Dijkstra}
+\subsection{Ý tưởng thuật toán}
+Trong trường hợp trọng số trên các cung là không âm, thuật toán do Dijkstra là hiệu quả hơn nhiều so với thuật toán Bellman-Ford.
+
+Thuật toán được cây dựng dựa trên thủ tục gán nhãn. Đầu tiên nhãn của các đỉnh là tạm thời. Ở mỗi bước lặp có một nhãn tạm thời trở thành nhãn cố định. Nếu nhãn của một đỉnh u trở thành cố
+định thì $d[u]$ sẽ cho ta độ dài của đđnn từ đỉnh s đến u. Thuật toán kết thúc khi nhãn của tất cả các đỉnh trở thành cố định.
+
+\textbf{Đầu vào} : 
+\begin{itemize}
+\item Đồ thị $G = (V, E)$ với n đỉnh xác định bởi ma trận trọng số $W[u, v], u,v \in V$, đỉnh nguồn $s \in V$.
+\end{itemize}
+
+\textbf{Giả thiết}: $w[u, v] \leqslant 0, u,v \in V$.
+
+\textbf{Đầu ra} : Với mỗi $v \in V$
+\begin{itemize}
+\item $d[v] = \delta[s, v]$.
+\item $p[v]$ - Đỉnh đi trước v trong đđnn từ s đến v.
+\end{itemize}
+
+\subsection{Cài đặt}
+Em thực hiện cài đặt thuật toán theo mã giả:
+
+\begin{algorithm}
+\caption{Dijkstra algorithm}\label{Dijkstra}
+\begin{algorithmic}[1]
+\Procedure{Dijkstra}{}
+\For{$v \in V$}         \Comment{Khởi tạo}
+    \State $d[v] \gets w[s, v]$
+    \State $p[v] \gets s$
+\EndFor
+\State $d[s] \gets 0$
+\State $S \gets \{s\}$         \Comment{$S$ - Tập đỉnh có nhãn cố định}
+\State $T \gets V\backslash \{s\}$   \Comment{$T$ - Tập đỉnh có nhãn tạm thời}
+\While{$T\not=\emptyset$}          
+    \texttt{Tìm đỉnh $u \in T$ thỏa mãn $d[u] = min\{d[z] : z\in T\}$}
+    \State $T \gets T\backslash \{u\}$
+    \State $S \gets S \cup \{u\}$       \Comment{Cố định nhãn của đỉnh u}
+    \For{$v \in T$}                   \Comment{Gán nhãn lại cho các đỉnh trong T}
+        \If{$d[v] > d[u] + w[u, v]$}  \Comment{Bước relaxation}
+            \State $d[v] \gets d[u] + w[u, v]$
+            \State $p[v] \gets u$
+        \EndIf
+    \EndFor
+\EndWhile
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Thuật toán Dijkstra theo mã giả trên tìm được đường đi ngắn nhất từ đỉnh s đến tất cả các đỉnh còn lại trên đồ thị sau thời gian $\mathcal{O}(n^{2})$
+
+\section{So sánh với thư viện có sẵn}
+Để kiểm tra tính đúng đắn và hiệu quả của thuật toán đã cài đặt, em sử dụng thư viện \textit{Networkx} để so sánh kết quả và thời gian chạy.
+\subsection{Dữ liệu}
+
+Dữ liệu được tạo ngẫu nhiên từ thư viện \textit{networkx}. Do việc tạo một đồ thị lớn có trọng số âm mà không có chu trình âm rất khó khăn nên em chỉ tạo đồ thị có trọng số dương.
+
+Và em cũng thực hiện lưu đồ thị đã tạo ngẫu nhiên dưới dạng ma trận trọng số trên một mảng trên numpy để tiện kiểm tra thuật toán và tránh phải lưu trữ các file dữ liệu.
+
+\subsection{So sánh thời gian}
+Sử dụng 2 đồ thị được tạo ngẫu nhiên, em thực hiện tổng hợp thời gian chạy dưới bảng sau:
+
+\begin{table}[ht!]
+\centering
+\begin{tabular}{|>{\centering\arraybackslash}p{4cm}|>{\centering\arraybackslash}p{5cm}|>{\centering\arraybackslash}p{5cm}|}
+\hline
+                                 & $100$ đỉnh, $4000$ cạnh   & $2000$ đỉnh, $2.10^{6}$ cạnh    \\ \hline
+\textbf{Dijsktra}                & 0.0068361759185791016     & 2.077575206756592              \\ \hline
+\textbf{Thư viện: Dijkstra}      & 0.005284309387207031      & 2.4850828647613525               \\ \hline
+\textbf{Bellman-Ford}            & 0.8282551765441895        & Không chạy được                 \\ \hline
+\textbf{Thư viện: Bellman-Ford}  &  0.0045166015625          & 2.7311718463897705              \\ \hline
+\end{tabular}
+\caption{So sánh thời gian chạy với thư viện(Đơn vị: giây(s))}
+\label{tab:so sánh thời gian}
+\end{table}
+
+\subsection{Phân tích lý do}
+Thời gian chạy giữa thư viện và tự cài đặt còn chênh lệch nhiều, có thể do các lý do:
+
+\begin{itemize}
+\item Sử dụng cấu trúc dữ liệu để lưu trữ chưa tốt
+\item Sử dụng nhiều vòng lặp lồng nhau nên không được nhanh
+\item Đối với đồ thị thưa, sử dụng ma trận kề là không hiệu quả (đặc biệt với thuật toán Bellman-Ford)
+\end{itemize}
+\end{document}
